@@ -1,6 +1,6 @@
 import random
 import heapq
-from typing import List, Dict, Union, Optional, Set
+from typing import Callable, List, Dict, Union, Optional, Set
 import copy
 from consensus import (
     State, Vote, Block,
@@ -131,7 +131,24 @@ class Staker:
         self.chain[new_hash] = new_block
         self.post_states[new_hash] = state
 
-        self.network.submit(new_block, self.validator_id)
+        if self.validator_id != 0:
+            # an honest proposer
+            self.network.submit(new_block, self.validator_id)
+        else:
+            # the faulty proposer
+            new_block2 = Block(
+                slot=new_slot,
+                parent=self.head,
+                votes=votes_to_add
+            )
+            state2 = copy.deepcopy(state)
+            state2.stored_value = True
+            new_block2.state_root = compute_hash(state2)
+            new_hash2 = compute_hash(new_block2)
+            self.post_states[new_hash2] = state2
+            self.chain[new_hash2] = new_block2
+            self.network.submit_faulty(new_block, self.validator_id, lambda x: x == 1)
+            self.network.submit_faulty(new_block2, self.validator_id, lambda x: x == 2)
 
     # Called when it's the staker's turn to vote
     def vote(self):
@@ -213,6 +230,14 @@ class P2PNetwork:
                 continue
             deliver_at = self.time + self.latency_func(self.time)
             self.queues[recipient_id].append((deliver_at, item))
+
+    def submit_faulty(self, item: Union[Block, Vote], sender_id: int, is_target: Callable[[int], bool]):
+        for recipient_id, staker in self.stakers.items():
+            if recipient_id == sender_id:
+                continue
+            deliver_at = self.time + self.latency_func(self.time)
+            if is_target(recipient_id):
+                self.queues[recipient_id].append((deliver_at, item))
 
     def time_step(self):
         self.time += 1

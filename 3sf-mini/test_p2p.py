@@ -8,7 +8,7 @@ from typing import Optional, List, Dict
 import random
 
 SLOT_DURATION = 12
-NUM_STAKERS = 10
+NUM_STAKERS = 4  # 10
 ZERO_HASH = '0'*64
 
 import matplotlib.pyplot as plt
@@ -110,7 +110,7 @@ def plot_view(fig, ax, staker: Staker, title="Staker's View"):
 
 if __name__ == '__main__':
     SLOT_DURATION = 12
-    NUM_STAKERS = 10
+    NUM_STAKERS = 4
 
     fig, ax = plt.subplots()
     plt.ion()
@@ -144,7 +144,7 @@ if __name__ == '__main__':
         assert staker.head == genesis_hash
 
     # Simulation loop
-    for time in range(1000):
+    for time in range(10000):
         # Deliver messages
         network.time_step()
 

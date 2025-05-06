@@ -22,6 +22,8 @@ class State:
     historical_block_hashes: List[str] = field(default_factory=list)
     justified_slots: List[bool] = field(default_factory=list)
     justifications: Dict[str, List[bool]] = field(default_factory=dict)
+    # addon, a Boolean value to distinguish between two different proposals
+    stored_value: bool = False
 
 # A vote. In a live implementation this would also include a signature
 @dataclass
@@ -95,6 +97,7 @@ def process_block(state: State, block: Block) -> State:
 
         # If 2/3 voted for the same new valid hash to justify
         if count == (2 * state.config.num_validators) // 3:
+        #if 3 * count > 2 * state.config.num_validators:
             state.latest_justified_hash = vote.target
             state.latest_justified_slot = vote.target_slot
             state.justified_slots[vote.target_slot] = True
